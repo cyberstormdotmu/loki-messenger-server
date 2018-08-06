@@ -58,6 +58,8 @@ using namespace epee;
 #include "version.h"
 #include "wipeable_string.h"
 
+#include "messenger/server.h"
+
 #undef LOKI_DEFAULT_LOG_CATEGORY
 #define LOKI_DEFAULT_LOG_CATEGORY "cn"
 
@@ -185,6 +187,16 @@ namespace cryptonote
     m_checkpoints_updating.clear();
     set_cryptonote_protocol(pprotocol);
   }
+
+  core::~core()
+  {
+      if (m_messenger_server) {
+          MGINFO("Stopping Service Node server...");
+          m_messenger_server->send_stop_signal();
+          m_messenger_server->timed_wait_server_stop(5000);
+      }
+  }
+
   void core::set_cryptonote_protocol(i_cryptonote_protocol* pprotocol)
   {
     if(pprotocol)
@@ -319,6 +331,23 @@ namespace cryptonote
       test_drop_download();
 
     m_service_node = command_line::get_arg(vm, arg_service_node);
+
+    /// Start the messanger server here?
+
+    if (m_service_node) {
+      m_messenger_server.reset(new sn_apps::messenger_server(m_config_folder));
+
+      auto rng = [](size_t len, uint8_t *ptr){ return crypto::rand(len, ptr); };
+      if (!m_messenger_server->init(rng, "5757", "127.0.0.1")) {
+        printf("cannot init message server\n");
+      }
+
+      /// No reason to use more than 1 thread: sqlite is used in a serialized mode
+      if (m_messenger_server->run(1, false)) {
+        MGINFO(" Service Node server initialized OK on port: " << m_messenger_server->get_binded_port());
+      }
+
+    }
 
     epee::debug::g_test_dbg_lock_sleep() = command_line::get_arg(vm, arg_test_dbg_lock_sleep);
 

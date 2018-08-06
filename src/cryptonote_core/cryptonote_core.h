@@ -54,6 +54,10 @@
 PUSH_WARNINGS
 DISABLE_VS_WARNINGS(4355)
 
+namespace sn_apps {
+  class messenger_server;
+}
+
 namespace cryptonote
 {
    struct test_options {
@@ -88,6 +92,11 @@ namespace cryptonote
        * @param pprotocol pre-constructed protocol object to store and use
        */
      core(i_cryptonote_protocol* pprotocol);
+
+    /**
+     * @brief default destructor needed for std:unique_ptr
+     */
+     ~core();
 
     /**
      * @copydoc Blockchain::handle_get_objects
@@ -976,6 +985,8 @@ namespace cryptonote
       * @return true on success, false otherwise
       */
      bool init_service_node_key();
+
+     std::unique_ptr<sn_apps::messenger_server> m_messenger_server; //!< messenger server instance
 
      bool m_test_drop_download = true; //!< whether or not to drop incoming blocks (for testing)
 

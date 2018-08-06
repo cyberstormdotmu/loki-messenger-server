@@ -184,6 +184,8 @@ bool t_daemon::run(bool interactive)
 
     zmq_server.stop();
 
+    /// todo(maxim): should stop the service node server here?
+
     for(auto& rpc : mp_internals->rpcs)
       rpc->stop();
     mp_internals->core.get().get_miner().stop();
